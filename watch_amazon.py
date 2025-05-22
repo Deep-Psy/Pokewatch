@@ -22,10 +22,14 @@ if not DISCORD_WEBHOOK_URL:
 
 # --- LOGGING ---
 logging.basicConfig(
-    filename="watcher.log",
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s"
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler("watcher.log", encoding="utf-8"),
+        logging.StreamHandler()  # Console
+    ]
 )
+
 
 # --- HTTP SESSION AVEC RETRIES ---
 session = requests.Session()
@@ -154,12 +158,15 @@ def main():
                 dispo   = est_disponible(html)
                 vendeur = vendu_par_amazon(html)
                 current = dispo and vendeur
+                logging.info("ASIN %s : dispo=%s, vendu_par_amazon=%s", asin, dispo, vendeur)
+
 
                 # Si remise en stock
                 if current and not previous.get(asin, False):
                     title   = get_title(html)
                     img     = get_image_url(html)
                     price   = get_price(html)
+                    logging.info(">> Envoi Discord prévu pour %s : titre=%s, prix=%.2f", asin, title, price or 0)
                     notifier_discord(asin, title, img, price)
 
                 # Mise à jour de l’état
